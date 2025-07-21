@@ -99,9 +99,3 @@ Por defecto, el servidor escucha en http://localhost:4000.
   export REFILL_PERIOD=60      # periodo en segundos  
 
 - El script Lua se puede tunear para un Sliding Window cambiando la lógica de recarga.
-
----
-
-## 📥 Descarga el README
-
-Este archivo ya está generado como README.md en tu proyecto.
