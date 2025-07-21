@@ -1,11 +1,14 @@
-const express = require("express");
+const express    = require("express");
+const cors       = require("cors");
 const bodyParser = require("body-parser");
-const { redis } = require("./redis");
+const { redis }  = require("./redis");
 const { checkRate } = require("./limiter");
-const { REFILL_TOKENS, REFILL_PERIOD } = require("./config");
 
 const app = express();
-app.use(bodyParser.json());
+
+// dashboard (other project in github called: API-rate-limiter-dashboard) needs cors
+app.use(cors({ origin: "http://localhost:5173" }));
+app.use(bodyParser.json()); // for db flush
 
 // Middleware de rate-limit
 app.use(async (req, res, next) => {
@@ -70,4 +73,34 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Rate-Limiter API listening on port ${PORT}`);
+});
+
+// Necesita bodyParser para JSON
+// POST /admin/flush
+app.post("/admin/flush", async (_, res, next) => {
+  try {
+    // vacía la db actual
+    await redis.flushdb();
+    res.json({ status: "ok", msg: "DB flushed" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/spam
+// { count, intervalMs }
+app.post("/admin/spam", async (req, res, _) => {
+  const { count, intervalMs } = req.body;
+  const c = parseInt(count) || 0;
+  const delay = parseInt(intervalMs) || 0;
+
+  // dispara las peticiones en background
+  (async () => {
+    for (let i = 0; i < c; i++) {
+      try { await redis.call("PING"); } catch(_) {}
+      await new Promise(r => setTimeout(r, delay));
+    }
+  })();
+
+  res.json({ status: "started", count: c, intervalMs: delay });
 });
