@@ -2,6 +2,23 @@
 
 Este proyecto implementa un microservicio de rate‑limiting distribuido usando **Node.js**, **Express** y **Redis** con un script **Lua** para garantizar la atomicidad del algoritmo **Token Bucket**.
 
+## Visualización del proyecto
+
+Existe un proyecto en https://github.com/VictorPlaSanchis/API-rate-limit-dashboard para visualizar el uso del Rate-Limiter con un dashboard con React+Vite.
+
+## Atomicidad con Lua
+```Lua
+-- token_bucket.lua (fragmento)
+local key       = ARGV[1]
+local refill    = tonumber(ARGV[2])
+local period    = tonumber(ARGV[3])
+local cost      = tonumber(ARGV[4])
+-- cálculo y actualización de tokens
+redis.call("SET", key .. ":ts", now)
+redis.call("SET", key .. ":tokens", tokens)
+```
+Este fragmento se ejecuta enteramente en el servidor Redis como un solo comando EVALSHA, garantizando que ninguna otra operación interrumpa la recarga y el gasto de tokens, por lo que todas las lecturas y escrituras de estado ocurren de forma atómica.
+
 ---
 
 ## 📦 Estructura
